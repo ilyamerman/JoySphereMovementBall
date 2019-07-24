@@ -6,7 +6,7 @@
 #include "TimeLib.h"
 #include "Time.h"
 
-SoftwareSerial mySerial(9,10);
+SoftwareSerial mySerial(3,5);
 
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
@@ -21,6 +21,7 @@ MPU6050 mpu;
 #define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
 #define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
 bool blinkState = false;
+int loopCount = 0;
 
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -131,6 +132,7 @@ void setup() {
 }
 
 void loop() {
+    loopCount++;
     // if programming failed, don't try to do anything
     if (!dmpReady) return;
 
@@ -208,35 +210,30 @@ void loop() {
         mpu.dmpGetGravity(&gravity, &q);
         mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-        yawBuffer[bufferIndex % ACCELERO_BUFFER_SIZE] = ypr[0] * 180 / M_PI;
-        pitchBuffer[bufferIndex % ACCELERO_BUFFER_SIZE] = ypr[1] * 180 / M_PI;
-        rollBuffer[bufferIndex % ACCELERO_BUFFER_SIZE] = ypr[2] * 180 / M_PI;
-        bufferIndex++;
+//        yawBuffer[bufferIndex % ACCELERO_BUFFER_SIZE] = ypr[0] * 180 / M_PI;
+//        pitchBuffer[bufferIndex % ACCELERO_BUFFER_SIZE] = ypr[1] * 180 / M_PI;
+//        rollBuffer[bufferIndex % ACCELERO_BUFFER_SIZE] = ypr[2] * 180 / M_PI;
+//        bufferIndex++;
 
-        double yaw = ypr[0] * 180 / M_PI;
-        double pitch = ypr[1] * 180 / M_PI;
-        double roll = ypr[2] * 180 / M_PI;
-
-        int playerSpeed = sqrt(pow(pitch, 2) + pow(roll, 2));
-
-        double playerDirection;
-
-        if (pitch != 0) {
-            playerDirection = atan(roll / pitch);
-        }
-        else {
-            playerDirection = 0.0;
+        if (loopCount % 4 == 0) {
+            double yaw = ypr[0] * 180 / M_PI;
+            double pitch = ypr[1] * 180 / M_PI;
+            double roll = ypr[2] * 180 / M_PI;
+            mySerial.print(round(yaw));
+            mySerial.print(" ");
+            mySerial.print(round(pitch));
+            mySerial.print(" ");
+            mySerial.println(round(roll));
         }
 
-        mySerial.print(playerSpeed);
-        mySerial.print(" ");
-        mySerial.println(playerDirection);
-        Serial.print(playerSpeed);
-        Serial.print(" ");
-        Serial.println(playerDirection);
+        //mySerial.print("\n");
+//        Serial.print(roll);
+//        Serial.print(" ");
+//        Serial.println(pitch);
+        //delay(20);
     }
 
     // blink LED to indicate activity
-    blinkState = !blinkState;
-    digitalWrite(LED_PIN, blinkState);
+    // blinkState = !blinkState;
+    //digitalWrite(LED_PIN, blinkState);
 }
